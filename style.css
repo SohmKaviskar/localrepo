@@ -1,0 +1,56 @@
+/* General body styling */
+body {
+    font-family: Arial, sans-serif; /* Sets the default font */
+    margin: 0; /* Removes default body margin */
+    padding: 20px; /* Adds some padding around the content */
+    background-color: #f4f4f4; /* Light grey background */
+    color: #333; /* Dark grey text color */
+}
+
+/* Header styling */
+header {
+    background-color: #007bff; /* Blue background */
+    color: white; /* White text */
+    padding: 15px;
+    text-align: center;
+    border-radius: 8px 8px 0 0; /* Rounded top corners */
+}
+
+/* Heading (h1) styling */
+h1 {
+    font-size: 2.5em; /* Larger font size */
+    margin-bottom: 10px;
+}
+
+/* Paragraph styling */
+p {
+    line-height: 1.6; /* Improves readability */
+    margin-bottom: 15px;
+}
+
+/* Button styling using its class */
+.my-button {
+    background-color: #28a745; /* Green background */
+    color: white; /* White text */
+    padding: 10px 20px;
+    border: none; /* No border */
+    border-radius: 5px; /* Slightly rounded corners */
+    cursor: pointer; /* Changes cursor to pointer on hover */
+    font-size: 1em;
+    transition: background-color 0.3s ease; /* Smooth transition for hover effect */
+}
+
+/* Button hover effect */
+.my-button:hover {
+    background-color: #218838; /* Darker green on hover */
+}
+
+/* Footer styling */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    padding: 10px;
+    font-size: 0.9em;
+    color: #666; /* Lighter grey text */
+    border-top: 1px solid #ddd; /* Thin line above footer */
+}
