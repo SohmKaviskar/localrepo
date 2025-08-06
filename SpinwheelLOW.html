@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Spin Wheel</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+            margin: 0;
+            overflow: hidden; /* Prevent scroll if wheel is too large */
+        }
+
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 90%;
+            width: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative; /* Needed for absolute pointer */
+        }
+
+        h1 {
+            color: #007bff;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .controls {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        input[type="file"] {
+            display: block;
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: calc(100% - 22px); /* Adjust for padding and border */
+            box-sizing: border-box;
+            font-size: 1em;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            min-width: 150px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        button:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        #wheelCanvas {
+            display: block;
+            margin: 20px auto;
+            border: 5px solid #ddd;
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            background-color: #eee; /* Background if wheel doesn't fill canvas */
+        }
+
+        /* The pointer/indicator */
+        .pointer {
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid #ffc107; /* Yellow pointer */
+            position: absolute;
+            top: 15px; /* Position it above the wheel */
+            left: 50%;
+            transform: translateX(-50%); /* Center it horizontally */
+            z-index: 10; /* Ensure it's above the canvas */
+            filter: drop-shadow(0 2px 5px rgba(0,0,0,0.3)); /* Shadow for depth */
+        }
+
+
+        #result {
+            margin-top: 30px;
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #007bff;
+            min-height: 1.5em; /* Reserve space to prevent layout shift */
+            opacity: 0; /* Initially hidden */
+            transform: translateY(20px); /* Start below final position */
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+        }
+
+        #result.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .initial-message {
+            font-size: 1.2em;
+            color: #555;
+            margin-top: 20px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+
+            #result {
+                font-size: 1.4em;
+            }
+
+            .pointer {
+                border-left: 15px solid transparent;
+                border-right: 15px solid transparent;
+                border-bottom: 25px solid #ffc107;
+                top: 10px;
+            }
+             input[type="file"] {
+                font-size: 0.9em;
+             }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="pointer"></div>
+        <h1>Spin to Win!</h1>
+
+        <div class="controls">
+            <input type="file" id="fileInput" accept=".txt">
+            <button id="spinButton" disabled>Load a file first</button>
+        </div>
+
+        <canvas id="wheelCanvas" width="500" height="500"></canvas>
+
+        <div id="result"></div>
+        <div class="initial-message" id="initialMessage">Upload a text file with one item per line.</div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const spinButton = document.getElementById('spinButton');
+        const resultDiv = document.getElementById('result');
+        const initialMessageDiv = document.getElementById('initialMessage');
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let segments = [];
+        let currentRotation = 0; // in degrees
+        let isSpinning = false;
+        let animationFrameId = null;
+
+        // --- Canvas Drawing ---
+        const wheelConfig = {
+            centerX: canvas.width / 2,
+            centerY: canvas.height / 2,
+            radius: Math.min(canvas.width, canvas.height) / 2 - 10, // Reduced radius to fit border
+            textRadius: Math.min(canvas.width, canvas.height) / 2 * 0.85, // Where text is drawn
+            colors: ['#ff6b6b', '#4ecdc4', '#45b7d1', '#fed9b7', '#f0f465', '#a28089', '#a4f9c8', '#f79f79'] // Color palette
+        };
+
+        function drawWheel() {
+            if (segments.length === 0) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const segmentAngle = 360 / segments.length; // Angle per segment in degrees
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+
+            // Apply current rotation
+            ctx.translate(wheelConfig.centerX, wheelConfig.centerY);
+            ctx.rotate(currentRotation * Math.PI / 180); // Canvas rotate expects radians
+            ctx.translate(-wheelConfig.centerX, -wheelConfig.centerY);
+
+            for (let i = 0; i < segments.length; i++) {
+                const startAngle = i * segmentAngle;
+                const endAngle = (i + 1) * segmentAngle;
+
+                // Draw segment
+                ctx.beginPath();
+                ctx.moveTo(wheelConfig.centerX, wheelConfig.centerY);
+                ctx.arc(wheelConfig.centerX, wheelConfig.centerY, wheelConfig.radius,
+                        startAngle * Math.PI / 180, endAngle * Math.PI / 180);
+                ctx.closePath();
+                ctx.fillStyle = wheelConfig.colors[i % wheelConfig.colors.length];
+                ctx.fill();
+
+                // Draw segment border
+                ctx.strokeStyle = '#fff'; // White border
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw text (rotated)
+                ctx.save();
+                ctx.translate(wheelConfig.centerX, wheelConfig.centerY);
+                // Rotate to the center of the segment
+                ctx.rotate((startAngle + segmentAngle / 2) * Math.PI / 180);
+                // Translate outward to the text position
+                ctx.translate(wheelConfig.textRadius, 0);
+                // Rotate text to be upright relative to the segment (adjust this angle if pointer is elsewhere)
+                ctx.rotate(90 * Math.PI / 180); // Rotate 90 degrees counter-clockwise for text to be horizontal when segment is vertical
+
+                ctx.fillStyle = '#333'; // Text color
+                ctx.font = 'bold 16px Segoe UI, sans-serif'; // Text font
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // Simple text fitting: reduce font size or truncate if too long
+                let text = segments[i];
+                const maxTextWidth = wheelConfig.radius * 0.7; // Allow text to take up 70% of radius
+                 while (ctx.measureText(text).width > maxTextWidth && text.length > 3) {
+                     text = text.substring(0, text.length - 1) + '...';
+                 }
+                ctx.fillText(text, 0, 0);
+
+                ctx.restore(); // Restore after drawing text
+            }
+
+            // Draw center circle (optional)
+            ctx.beginPath();
+            ctx.arc(wheelConfig.centerX, wheelConfig.centerY, wheelConfig.radius * 0.1, 0, 2 * Math.PI);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+            ctx.strokeStyle = '#ddd';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+
+            ctx.restore(); // Restore after applying total rotation
+        }
+
+        // --- Spin Logic ---
+        function easeOutCubic(t) {
+            return (--t) * t * t + 1;
+        }
+
+        function spin() {
+            if (isSpinning || segments.length === 0) return;
+
+            isSpinning = true;
+            spinButton.disabled = true;
+            resultDiv.classList.remove('show'); // Hide previous result
+
+            const segmentAngle = 360 / segments.length;
+            const winningIndex = Math.floor(Math.random() * segments.length);
+
+            // Calculate target angle:
+            // 1. Find the angle of the center of the winning segment relative to the initial position.
+            // 2. Adjust based on where the pointer is (pointer is at 90 deg / top).
+            // 3. Add multiple full rotations to make it spin.
+            // 4. Adjust slightly to ensure it doesn't land *exactly* on the border.
+
+            const targetSegmentCenterAngle = winningIndex * segmentAngle + segmentAngle / 2;
+
+            // We want the *center* of this segment to align with the *pointer* (at 90 degrees relative to the canvas 0 degrees).
+            // The pointer is effectively looking at 90 degrees clockwise from the right horizontal.
+            // If the segment center is at `targetSegmentCenterAngle`, we need to rotate the wheel
+            // so that `targetSegmentCenterAngle` moves to `90`.
+            // Required rotation = `90 - targetSegmentCenterAngle`
+            // We also add extra full rotations (e.g., 5 to 10)
+            const extraRotations = Math.floor(Math.random() * 6 + 5); // 5 to 10 full spins
+            let targetRotation = 90 - targetSegmentCenterAngle + extraRotations * 360;
+
+            // Ensure targetRotation is positive relative to current rotation, but considers the spin direction
+             if (targetRotation < currentRotation - 360) { // Prevent spinning backwards if target is close
+                 targetRotation += Math.ceil((currentRotation - targetRotation) / 360) * 360;
+             }
+
+
+            const duration = 5000; // Spin duration in milliseconds
+            let startTime = null;
+
+            function animate(currentTime) {
+                if (startTime === null) startTime = currentTime;
+                const elapsedTime = currentTime - startTime;
+                const progress = Math.min(elapsedTime / duration, 1); // Progress from 0 to 1
+
+                // Apply easing function
+                const easedProgress = easeOutCubic(progress);
+
+                // Calculate current angle based on eased progress
+                // Start from current rotation, spin towards targetRotation
+                const newRotation = currentRotation + (targetRotation - currentRotation) * easedProgress;
+
+                // Draw the wheel with the new rotation
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear before drawing
+                ctx.save();
+                ctx.translate(wheelConfig.centerX, wheelConfig.centerY);
+                ctx.rotate(newRotation * Math.PI / 180);
+                ctx.translate(-wheelConfig.centerX, -wheelConfig.centerY);
+                drawWheelSegmentsOnly(); // Draw segments without applying text rotation relative to canvas
+                ctx.restore(); // Restore after applying total rotation
+
+                 // Redraw center circle and pointer
+                 drawCenterCircle();
+
+
+                if (progress < 1) {
+                    animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    // Animation finished
+                    isSpinning = false;
+                    spinButton.disabled = false;
+                    currentRotation = newRotation % 360; // Update permanent rotation
+                    displayResult(winningIndex);
+                }
+            }
+
+            // Helper to draw only segments and borders during animation (text rotation is complex with canvas transform)
+             function drawWheelSegmentsOnly() {
+                 const segmentAngle = 360 / segments.length;
+
+                 for (let i = 0; i < segments.length; i++) {
+                     const startAngle = i * segmentAngle;
+                     const endAngle = (i + 1) * segmentAngle;
+
+                     ctx.beginPath();
+                     ctx.moveTo(wheelConfig.centerX, wheelConfig.centerY);
+                     ctx.arc(wheelConfig.centerX, wheelConfig.centerY, wheelConfig.radius,
+                             startAngle * Math.PI / 180, endAngle * Math.PI / 180);
+                     ctx.closePath();
+                     ctx.fillStyle = wheelConfig.colors[i % wheelConfig.colors.length];
+                     ctx.fill();
+
+                     ctx.strokeStyle = '#fff'; // White border
+                     ctx.lineWidth = 2;
+                     ctx.stroke();
+                 }
+             }
+
+             // Helper to draw center circle
+             function drawCenterCircle(){
+                 ctx.beginPath();
+                 ctx.arc(wheelConfig.centerX, wheelConfig.centerY, wheelConfig.radius * 0.1, 0, 2 * Math.PI);
+                 ctx.fillStyle = '#fff';
+                 ctx.fill();
+                 ctx.strokeStyle = '#ddd';
+                 ctx.lineWidth = 3;
+                 ctx.stroke();
+             }
+
+            requestAnimationFrame(animate);
+        }
+
+        function displayResult(winningIndex) {
+            resultDiv.textContent = `Winner: ${segments[winningIndex]}!`;
+            resultDiv.classList.add('show'); // Show result with animation
+        }
+
+        // --- Event Listeners ---
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const text = e.target.result;
+                    segments = text.split('\n')
+                                   .map(line => line.trim()) // Remove leading/trailing whitespace
+                                   .filter(line => line.length > 0); // Remove empty lines
+
+                    if (segments.length > 1) {
+                        drawWheel(); // Draw the wheel with new segments
+                        spinButton.disabled = false;
+                        spinButton.textContent = 'Spin Wheel';
+                        resultDiv.classList.remove('show'); // Hide result if file changes
+                        resultDiv.textContent = '';
+                        initialMessageDiv.style.display = 'none'; // Hide initial message
+                        currentRotation = 0; // Reset rotation on new file
+                    } else {
+                        segments = []; // Clear segments if not enough lines
+                        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+                        spinButton.disabled = true;
+                        spinButton.textContent = 'Add more items';
+                        resultDiv.classList.remove('show');
+                        resultDiv.textContent = '';
+                        initialMessageDiv.style.display = 'block';
+                        initialMessageDiv.textContent = 'Text file must contain at least 2 lines.';
+                    }
+                };
+                reader.onerror = function(e) {
+                    console.error("Error reading file:", e);
+                    alert("Error reading file. Please try again.");
+                    segments = [];
+                    spinButton.disabled = true;
+                    spinButton.textContent = 'Error loading file';
+                     initialMessageDiv.style.display = 'block';
+                     initialMessageDiv.textContent = 'Could not read file. Try a different one.';
+                };
+                reader.readAsText(file);
+            } else {
+                // No file selected or selection cancelled
+                 segments = [];
+                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                 spinButton.disabled = true;
+                 spinButton.textContent = 'Load a file first';
+                 resultDiv.classList.remove('show');
+                 resultDiv.textContent = '';
+                 initialMessageDiv.style.display = 'block';
+                 initialMessageDiv.textContent = 'Upload a text file with one item per line.';
+            }
+        });
+
+        spinButton.addEventListener('click', spin);
+
+        // Initial draw (empty)
+         drawWheel();
+
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nothing UI | JSON Tool</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=VT323&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #e5e5e5;
+            --card-bg: #ffffff;
+            --primary-color: #ff0033;
+            --text-primary: #000000;
+            --text-secondary: #6e6e6e;
+            --border-color: #d0d0d0;
+            --input-bg: #f7f7f7;
+            --output-bg: #000000;
+            --output-text: #ffffff;
+            --output-border: #444444;
+            --font-main: 'Inter', sans-serif;
+            --font-pixel: 'VT323', monospace;
+            --radius: 20px;
+            --transition-speed: 0.3s;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-primary: #e5e5e5;
+            --text-secondary: #a0a0a0;
+            --border-color: #333333;
+            --input-bg: #2a2a2a;
+            --output-bg: #000000;
+            --output-text: #ffffff;
+            --output-border: #000000;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* Vertically center the card */
+            min-height: 100vh;
+            box-sizing: border-box;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+        }
+
+        .container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            width: 100%;
+            max-width: 700px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            transition: background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            font-family: var(--font-pixel);
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .label-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        label {
+            font-family: var(--font-pixel);
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            transition: color var(--transition-speed) ease;
+        }
+
+        textarea, select, input[type="text"] {
+            font-family: var(--font-main);
+            font-size: 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            transition: all var(--transition-speed) ease;
+        }
+        
+        textarea {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            min-height: 200px;
+            resize: vertical;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            align-items: end;
+        }
+        .controls .input-group {
+             display: flex;
+             flex-direction: column;
+             gap: 0.5rem;
+        }
+
+        .button {
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-pixel);
+            font-size: 1.25rem;
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 0.25rem 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .button:hover:not(:disabled) {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        #theme-toggle { font-size: 1.5rem; padding: 0.5rem; }
+
+        pre {
+            background: var(--output-bg);
+            color: var(--output-text);
+            font-family: var(--font-pixel);
+            padding: 1.5rem;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid var(--output-border);
+            min-height: 100px;
+            transition: all var(--transition-speed) ease;
+        }
+
+        #downloadBtn {
+            font-family: var(--font-pixel);
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: var(--primary-color);
+            background-color: #4a4a4a;
+            border: none;
+            border-radius: 9999px;
+            padding: 0.75rem 1rem;
+            width: 100%;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+        }
+        body.light-mode #downloadBtn {
+             background-color: #e0e0e0;
+             color: var(--primary-color);
+        }
+        #downloadBtn:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: var(--card-bg);
+        }
+        #downloadBtn:disabled {
+            background-color: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        body.light-mode #downloadBtn:disabled {
+             background-color: #d0d0d0;
+             color: #a0a0a0;
+        }
+
+        .error { color: var(--primary-color); font-weight: bold; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .pop-in { animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn {
+            0% { transform: scale(0.98); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>JSON Tool</h1>
+            <div id="theme-toggle" class="button" title="Toggle Theme">◐</div>
+        </div>
+
+        <div>
+            <div class="label-group">
+                <label for="inputText">Input Data:</label>
+                <button id="clearBtn" class="button" title="Clear Input">Clear</button>
+            </div>
+            <textarea id="inputText" placeholder="Paste your data here for live formatting..."></textarea>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="formatSelector">Input Format:</label>
+                <select id="formatSelector">
+                    <option value="rawJson">Auto-Format Raw JSON</option>
+                    <option value="keyValue">Key:Value Pairs</option>
+                    <option value="csv">CSV (with headers)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                 <label for="filenameInput">Filename:</label>
+                 <input type="text" id="filenameInput" placeholder="output.json">
+            </div>
+        </div>
+
+        <div>
+            <div class="label-group">
+                <label>JSON Output:</label>
+                <button id="copyBtn" class="button" title="Copy JSON">Copy</button>
+            </div>
+            <pre id="outputJson">{}</pre>
+        </div>
+        
+        <button id="downloadBtn" disabled>Download File</button>
+    </div>
+
+    <script>
+        const inputText = document.getElementById('inputText');
+        const outputJson = document.getElementById('outputJson');
+        const formatSelector = document.getElementById('formatSelector');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const copyBtn = document.getElementById('copyBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const filenameInput = document.getElementById('filenameInput');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        let jsonOutputString = '';
+
+        const handleConversion = () => {
+            const text = inputText.value.trim();
+            const format = formatSelector.value;
+            outputJson.classList.remove('error');
+
+            outputJson.classList.remove('pop-in');
+            void outputJson.offsetWidth;
+            outputJson.classList.add('pop-in');
+
+            if (!text) {
+                outputJson.textContent = '{}';
+                jsonOutputString = '';
+                downloadBtn.disabled = true;
+                return;
+            }
+
+            try {
+                let result;
+                if (format === 'keyValue') {
+                    result = parseKeyValue(text);
+                } else if (format === 'csv') {
+                    result = parseCsv(text);
+                } else if (format === 'rawJson') {
+                    result = JSON.parse(text);
+                }
+                
+                jsonOutputString = JSON.stringify(result, null, 2);
+                outputJson.textContent = jsonOutputString;
+                downloadBtn.disabled = false;
+
+            } catch (error) {
+                jsonOutputString = '';
+                outputJson.textContent = 'Error: ' + error.message;
+                outputJson.classList.add('error');
+                downloadBtn.disabled = true;
+            }
+        };
+        
+        const copyToClipboard = async () => {
+            if (copyBtn.disabled || !jsonOutputString) return;
+            try {
+                await navigator.clipboard.writeText(jsonOutputString);
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = 'Copied!';
+                copyBtn.disabled = true;
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                    copyBtn.disabled = false;
+                }, 1500);
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+            }
+        };
+        
+        const clearInput = () => {
+            inputText.value = '';
+            handleConversion();
+        };
+
+        const downloadFile = () => {
+            if (downloadBtn.disabled || !jsonOutputString) return;
+            
+            let filename = filenameInput.value.trim();
+            if (!filename) filename = 'output.json';
+            if (!filename.toLowerCase().endsWith('.json')) filename += '.json';
+
+            const blob = new Blob([jsonOutputString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        const applyTheme = (theme) => {
+            document.body.className = theme === 'dark' ? 'dark-mode' : 'light-mode';
+            localStorage.setItem('theme', theme);
+        };
+
+        themeToggle.addEventListener('click', () => {
+            const newTheme = document.body.classList.contains('dark-mode') ? 'light' : 'dark';
+            applyTheme(newTheme);
+        });
+
+        inputText.addEventListener('input', handleConversion);
+        formatSelector.addEventListener('change', handleConversion);
+        copyBtn.addEventListener('click', copyToClipboard);
+        clearBtn.addEventListener('click', clearInput);
+        downloadBtn.addEventListener('click', downloadFile);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            applyTheme(savedTheme);
+            handleConversion();
+        });
+
+        function parseKeyValue(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const jsonObject = {};
+            lines.forEach(line => {
+                const parts = line.split(/:(.*)/s);
+                if (parts.length < 2) throw new Error(`Invalid line in Key:Value format: "${line}"`);
+                const key = parts[0].trim();
+                const value = parts[1].trim();
+                if (!key) throw new Error(`Empty key found in line: "${line}"`);
+                jsonObject[key] = value;
+            });
+            return jsonObject;
+        }
+        
+        // **FIXED FUNCTION**
+        function parseCsv(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length < 2) throw new Error('CSV requires headers and at least one data row.');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const jsonArray = lines.slice(1).map(line => {
+                const values = line.split(',').map(v => v.trim());
+                if (values.length !== headers.length) throw new Error(`Row has ${values.length} columns, but header has ${headers.length}.`);
+                const jsonObject = {};
+                headers.forEach((header, index) => { jsonObject[header] = values[index]; });
+                return jsonObject;
+            });
+            return jsonArray;
+        }
+    </script>
+
+</body>
+</html>

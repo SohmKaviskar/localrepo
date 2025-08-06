@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Terminal - A Nothing-Inspired Blog</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #e5e5e5;
+            --card-bg-color: #ffffff;
+            --primary-color: #ff0033;
+            --accent-gray: #1e1e1e;
+            --text-primary-color: #000000;
+            --text-secondary-color: #6e6e6e;
+            --border-color: #d0d0d0;
+            --radius: 20px;
+            --font-main: 'Inter', sans-serif;
+            --font-pixel: 'VT323', monospace;
+            --transition-speed: 0.3s;
+        }
+
+        body.dark-mode {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --text-primary-color: #ffffff;
+            --text-secondary-color: #a0a0a0;
+            --border-color: #444444;
+        }
+
+        /* --- Base & Layout --- */
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--text-primary-color);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 2rem 1rem;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        .container {
+            position: relative;
+            background-color: var(--card-bg-color);
+            padding: 2.5rem;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 0 0 1px var(--border-color), 0 8px 30px rgba(0, 0, 0, 0.05);
+            transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+
+        /* --- Header & Theme Toggle --- */
+        .blog-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 2px dotted var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+        .blog-header h1 { font-family: var(--font-pixel); font-size: 3.5rem; margin: 0; }
+        .blog-header p { font-family: var(--font-main); color: var(--text-secondary-color); margin: 0.5rem 0 1.5rem 0; font-size: 1rem; }
+        
+        .theme-switch-wrapper { position: absolute; top: 1.5rem; right: 1.5rem; }
+        .theme-switch { display: inline-block; height: 26px; position: relative; width: 50px; }
+        .theme-switch input { display:none; }
+        .slider { background-color: var(--accent-gray); bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 34px; }
+        .slider:before { background-color: var(--card-bg-color); bottom: 4px; content: ""; height: 18px; left: 4px; position: absolute; transition: .4s; width: 18px; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary-color); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* --- General Buttons --- */
+        .action-button {
+            background: transparent;
+            color: var(--text-secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 9999px;
+            cursor: pointer;
+            font-family: var(--font-pixel);
+            font-size: 1rem;
+            padding: 0.5rem 1rem;
+            transition: all var(--transition-speed);
+        }
+        .action-button:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        .primary-action { border-color: var(--primary-color); color: var(--primary-color); }
+        .primary-action:hover { background-color: var(--primary-color); color: var(--card-bg-color); }
+        
+        /* --- Post List View --- */
+        .post-preview { padding: 1.5rem 0; border-bottom: 1px solid var(--border-color); }
+        .post-preview:last-child { border-bottom: none; }
+        .post-preview-title { font-family: var(--font-pixel); font-size: 2rem; margin: 0; color: var(--text-primary-color); text-decoration: none; }
+        .post-preview-meta { font-size: 0.8rem; color: var(--text-secondary-color); margin: 0.25rem 0 0.75rem 0; }
+        .post-preview-excerpt { font-size: 1rem; line-height: 1.6; margin-bottom: 1rem; }
+        .read-more-link { font-family: var(--font-pixel); color: var(--primary-color); text-decoration: none; font-size: 1.1rem; cursor: pointer; }
+
+        /* --- Single Post View --- */
+        .post-full-title { font-family: var(--font-pixel); font-size: 2.8rem; margin: 0 0 0.5rem 0; }
+        .post-full-meta { color: var(--text-secondary-color); margin-bottom: 2rem; }
+        .post-content { font-size: 1.1rem; line-height: 1.7; word-wrap: break-word; }
+        .post-content p { margin: 0 0 1.5rem 0; }
+        .post-content a { color: var(--primary-color); }
+        .post-content h3 { font-family: var(--font-pixel); font-size: 1.8rem; margin: 2rem 0 1rem 0; }
+        .post-content blockquote { margin: 1.5rem 0; padding-left: 1.5rem; border-left: 4px solid var(--primary-color); font-style: italic; color: var(--text-secondary-color); }
+        .post-content pre { background-color: var(--bg-color); padding: 1rem; border-radius: 10px; border: 1px solid var(--border-color); white-space: pre-wrap; word-wrap: break-word; font-family: monospace; }
+        .post-actions { margin-top: 2rem; border-top: 1px dotted var(--border-color); padding-top: 1.5rem; }
+
+        /* --- Editor View --- */
+        .editor-view h2 { font-family: var(--font-pixel); font-size: 2rem; margin-bottom: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-family: var(--font-pixel); font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary-color);
+            border-radius: 10px;
+            padding: 0.75rem;
+            font-family: var(--font-main);
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        .form-group textarea { min-height: 300px; line-height: 1.6; }
+        
+        .editor-toolbar {
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            border-radius: 10px 10px 0 0;
+            padding: 0.5rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        .toolbar-button {
+            font-family: var(--font-main);
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary-color);
+            border-radius: 5px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+        }
+        .toolbar-button:hover { background: var(--bg-color); }
+        .toolbar-button.bold { font-weight: bold; }
+        .toolbar-button.italic { font-style: italic; }
+        
+        #textSizeSelect {
+            background: transparent;
+            color: var(--text-secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: var(--font-main);
+            padding: 3px;
+        }
+        body.dark-mode #textSizeSelect { background-color: var(--accent-gray); }
+
+        .editor-actions { display: flex; justify-content: space-between; margin-top: 1rem; }
+        #deletePostBtn { border-color: var(--primary-color); color: var(--primary-color); }
+        #deletePostBtn:hover { background: var(--primary-color); color: var(--card-bg-color); }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="themeToggle"><input type="checkbox" id="themeToggle" /></label>
+            <div class="slider round"></div>
+        </div>
+
+        <header class="blog-header">
+            <h1>THE.TERMINAL</h1>
+            <p>A log of things, ideas, and digital artifacts.</p>
+            <button class="action-button primary-action" id="createPostBtn">CREATE.NEW</button>
+        </header>
+
+        <main id="page-content">
+            <!-- Dynamic Content Injected Here -->
+        </main>
+    </div>
+
+    <script>
+        // --- DATA MANAGEMENT ---
+        let posts = [];
+        const defaultPosts = [
+            { id: 1, title: 'System Online: A New Beginning', author: 'Admin', date: 'October 26, 2025', excerpt: 'Welcome to the first transmission...', content: '<p>Welcome to the first transmission. This space is dedicated to exploring the intersection of design, technology, and minimalism.</p><blockquote>Good design is as little design as possible.</blockquote>' },
+            { id: 2, title: 'The Power of a Single File', author: 'Admin', date: 'October 24, 2025', excerpt: 'In an age of complex build tools, there is elegance in a self-contained application...', content: '<p>In an age of complex build tools, there is elegance in a self-contained application. This entire blog exists within a single <code>.html</code> file.</p><h3>The Advantages</h3><p><b>Portability:</b> A single file is incredibly easy to share, host, or run locally.</p>' }
+        ];
+
+        function loadPosts() {
+            const savedPosts = localStorage.getItem('blogPosts');
+            if (savedPosts && JSON.parse(savedPosts).length > 0) {
+                posts = JSON.parse(savedPosts);
+            } else {
+                posts = defaultPosts;
+                savePosts();
+            }
+        }
+
+        function savePosts() {
+            localStorage.setItem('blogPosts', JSON.stringify(posts));
+        }
+
+        // --- VIEW RENDERING LOGIC ---
+        const pageContent = document.getElementById('page-content');
+
+        function renderPostList() {
+            pageContent.innerHTML = `
+                <div id="post-list-view">
+                    ${posts.map(post => `
+                        <article class="post-preview">
+                            <a href="#" class="post-preview-title" data-post-id="${post.id}">${post.title}</a>
+                            <div class="post-preview-meta">By ${post.author} on ${post.date}</div>
+                            <p class="post-preview-excerpt">${post.excerpt}</p>
+                            <a href="#" class="read-more-link" data-post-id="${post.id}">READ.MORE</a>
+                        </article>
+                    `).join('')}
+                </div>`;
+        }
+
+        function renderSinglePost(postId) {
+            const post = posts.find(p => p.id == postId);
+            if (!post) { renderPostList(); return; }
+            pageContent.innerHTML = `
+                <div id="single-post-view">
+                    <button class="action-button back-button">← BACK.TO.LOG</button>
+                    <h2 class="post-full-title">${post.title}</h2>
+                    <div class="post-full-meta">By ${post.author} // ${post.date}</div>
+                    <div class="post-content">${post.content}</div>
+                    <div class="post-actions">
+                        <button class="action-button edit-post-btn" data-post-id="${post.id}">EDIT.POST</button>
+                    </div>
+                </div>`;
+        }
+
+        function renderEditor(postId = null) {
+            const post = postId ? posts.find(p => p.id == postId) : null;
+            const isEditing = post !== null;
+            
+            pageContent.innerHTML = `
+                <div class="editor-view">
+                    <button class="action-button back-button">← CANCEL</button>
+                    <h2>${isEditing ? 'EDIT.POST' : 'CREATE.NEW.POST'}</h2>
+                    <div class="form-group">
+                        <label for="postTitle">Title</label>
+                        <input type="text" id="postTitle" value="${isEditing ? post.title : ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="postContent">Content (HTML is allowed)</label>
+                        <div class="editor-toolbar">
+                            <button class="toolbar-button bold" data-format="bold">B</button>
+                            <button class="toolbar-button italic" data-format="italic">I</button>
+                            <button class="toolbar-button" data-format="heading">H</button>
+                            <select id="textSizeSelect">
+                                <option value="0.8em">Smaller</option>
+                                <option value="1em" selected>Normal</option>
+                                <option value="1.2em">Larger</option>
+                                <option value="1.5em">X-Large</option>
+                            </select>
+                        </div>
+                        <textarea id="postContent">${isEditing ? post.content : ''}</textarea>
+                    </div>
+                    <div class="editor-actions">
+                        ${isEditing ? `<button id="deletePostBtn" class="action-button" data-post-id="${postId}">DELETE.POST</button>` : '<div></div>'}
+                        <button id="savePostBtn" class="action-button primary-action" data-post-id="${postId}">SAVE.CHANGES</button>
+                    </div>
+                </div>`;
+        }
+
+        // --- EDITOR TOOLBAR LOGIC ---
+        function formatText(command, value = null) {
+            const textarea = document.getElementById('postContent');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const selectedText = textarea.value.substring(start, end);
+            if (!selectedText) return;
+
+            let replacement;
+            switch(command) {
+                case 'bold': replacement = `<strong>${selectedText}</strong>`; break;
+                case 'italic': replacement = `<em>${selectedText}</em>`; break;
+                case 'heading': replacement = `<h3>${selectedText}</h3>`; break;
+                case 'size': replacement = `<span style="font-size:${value};">${selectedText}</span>`; break;
+                default: replacement = selectedText;
+            }
+            
+            textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+            textarea.focus();
+            textarea.setSelectionRange(start, start + replacement.length);
+        }
+
+        // --- EVENT HANDLING ---
+        document.getElementById('createPostBtn').addEventListener('click', () => renderEditor());
+
+        pageContent.addEventListener('click', function(e) {
+            // Navigation
+            if (e.target.matches('.read-more-link, .post-preview-title')) { e.preventDefault(); renderSinglePost(e.target.dataset.postId); }
+            if (e.target.matches('.back-button')) { e.preventDefault(); renderPostList(); }
+            if (e.target.matches('.edit-post-btn')) { e.preventDefault(); renderEditor(e.target.dataset.postId); }
+
+            // Editor Toolbar
+            if (e.target.matches('.toolbar-button')) { formatText(e.target.dataset.format); }
+
+            // Save Post
+            if (e.target.matches('#savePostBtn')) {
+                const title = document.getElementById('postTitle').value;
+                const content = document.getElementById('postContent').value;
+                const postId = e.target.dataset.postId;
+
+                if (!title || !content) { alert('Title and Content cannot be empty.'); return; }
+
+                if (postId !== 'null') { // Editing existing post
+                    const post = posts.find(p => p.id == postId);
+                    post.title = title;
+                    post.content = content;
+                    post.excerpt = content.substring(0, 100).replace(/<[^>]+>/g, '') + '...';
+                } else { // Creating new post
+                    const newPost = {
+                        id: Date.now(),
+                        title: title,
+                        content: content,
+                        author: 'Admin',
+                        date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                        excerpt: content.substring(0, 100).replace(/<[^>]+>/g, '') + '...'
+                    };
+                    posts.unshift(newPost);
+                }
+                savePosts();
+                renderPostList();
+            }
+
+            // Delete Post
+            if (e.target.matches('#deletePostBtn')) {
+                if (confirm('Are you sure you want to permanently delete this post?')) {
+                    const postId = e.target.dataset.postId;
+                    posts = posts.filter(p => p.id != postId);
+                    savePosts();
+                    renderPostList();
+                }
+            }
+        });
+
+        pageContent.addEventListener('change', function(e) {
+            if (e.target.matches('#textSizeSelect')) {
+                formatText('size', e.target.value);
+            }
+        });
+
+        // --- THEME LOGIC ---
+        const themeToggle = document.getElementById('themeToggle');
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+        themeToggle.addEventListener('change', toggleTheme);
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            if (localStorage.getItem('theme') === 'dark') {
+                themeToggle.checked = true;
+                document.body.classList.add('dark-mode');
+            }
+            loadPosts();
+            renderPostList();
+        };
+    </script>
+</body>
+</html>
